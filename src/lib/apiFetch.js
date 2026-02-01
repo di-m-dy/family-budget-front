@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const apiUrl = axios.create({
-    baseURL: "https://back.dimdy-dev.com",
+    baseURL: BASE_URL,
     timeout: 10000,
 })
 

@@ -18,9 +18,13 @@ import {blue} from '@mui/material/colors';
 import ApiFetch from "../lib/apiFetch.js";
 import {useEffect, useState} from "react";
 import defaultArrays from "../lib/defaultArrays.js";
+import {useSearchParams} from "react-router";
 
-const Invoice = ({invoiceId}) => {
+const Invoice = () => {
     const telegram = window.Telegram.WebApp;
+
+    const [searchParams] = useSearchParams();
+    const invoiceId = searchParams.get("invoice");
 
     const spendItems = defaultArrays().spendItems;
 

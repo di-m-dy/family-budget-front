@@ -1,27 +1,35 @@
 import {
+    Alert,
     Box,
     Button,
-    Container,
-    Typography,
     Card,
-    CardContent,
     CardActions,
-    TextField,
-    Select,
-    MenuItem,
-    InputLabel,
+    CardContent,
+    Container,
     FormControl,
-    Alert
+    InputLabel,
+    MenuItem,
+    Select,
+    TextField,
+    Typography
 } from "@mui/material";
 import ApiFetch from "../lib/apiFetch.js";
 import {useState} from "react";
 import defaultArrays from "../lib/defaultArrays.js";
+import {useNavigate, useSearchParams} from "react-router";
 
-const Manual = ({page, onChangePage}) => {
+const Manual = () => {
+    const telegram = window.Telegram.WebApp;
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [searchParams] = useSearchParams();
+    const isSpend = searchParams.get("spend");
+
     const spendItems = defaultArrays().spendItems;
     const incomesItems = defaultArrays().incomesItems;
 
-    const currentItems = page === "spend" ? spendItems : incomesItems;
+    const currentItems = isSpend ? spendItems : incomesItems;
 
     const today = () => {
         const d = new Date();
@@ -79,20 +87,27 @@ const Manual = ({page, onChangePage}) => {
     }
 
     const onSave = () => {
-        console.log("Date: ", date);
-        console.log("Amount: ", amount);
-        console.log("Category: ", category);
-
         const cd = checkDate(date);
         const ca = checkAmount(amount)
         const cc = checkCategory(category)
 
         const result = async () => {
+            setLoading(true);
             try {
-                const res = await ApiFetch.saveData({date, type: page === "income" ? "доход" : "трата", category, amount});
+                const res = await ApiFetch.saveData({
+                    date,
+                    type: isSpend ? "трата" : "доход",
+                    category,
+                    amount
+                });
                 console.log('Success: ', res.data)
+                telegram.close();
+
             } catch (err) {
                 console.log('Error: ', err)
+                setError(err.message)
+            } finally {
+                setLoading(false);
             }
         }
         if (cd && ca && cc) {
@@ -104,7 +119,7 @@ const Manual = ({page, onChangePage}) => {
         <Container maxWidth="sm">
             <Box display="flex" flexDirection="column" justifyContent="center" gap={6} height="90vh">
                 <Typography style={{fontWeight: "lighter"}} width='thin' align='center'
-                            variant='h3'>{page === "spend" ? "трата" : "прибыль"}</Typography>
+                            variant='h3'>{isSpend ? "трата" : "прибыль"}</Typography>
                 <Card sx={{backgroundColor: 'whitesmoke'}}>
                     <CardContent>
                         <Box display='flex' flexDirection='column' gap={4}>
@@ -113,7 +128,10 @@ const Manual = ({page, onChangePage}) => {
                                            onChange={(e) => onChangeDate(e.target.value)}
                                            slotProps={{inputLabel: {shrink: true}}} type="date" fullWidth id="date"
                                            placeholder="когда?" label="когда?" variant="outlined"/>
-                                <Typography color="error" sx={{fontSize: 10, height: 10}}>{isEmptyDate ? "Должна быть дата": ""}</Typography>
+                                <Typography color="error" sx={{
+                                    fontSize: 10,
+                                    height: 10
+                                }}>{isEmptyDate ? "Должна быть дата" : ""}</Typography>
                             </FormControl>
 
                             <FormControl>
@@ -121,7 +139,10 @@ const Manual = ({page, onChangePage}) => {
                                            value={amount}
                                            onChange={(e) => onChangeAmount(e.target.value)} type="number" fullWidth
                                            id="currency" label="сколько?" variant="outlined"/>
-                                <Typography color="error" sx={{fontSize: 10, height: 10}}>{isEmptyAmount ? "Должна быть заполнено": ""}</Typography>
+                                <Typography color="error" sx={{
+                                    fontSize: 10,
+                                    height: 10
+                                }}>{isEmptyAmount ? "Должна быть заполнено" : ""}</Typography>
                             </FormControl>
                             <FormControl>
                                 <InputLabel id="category-select-label">категория</InputLabel>
@@ -140,13 +161,21 @@ const Manual = ({page, onChangePage}) => {
                                         ))
                                     }
                                 </Select>
-                                <Typography color="error" sx={{fontSize: 10, height: 10}}>{isEmptyCategory ? "Должна быть выбрано": ""}</Typography>
+                                <Typography color="error" sx={{
+                                    fontSize: 10,
+                                    height: 10
+                                }}>{isEmptyCategory ? "Должна быть выбрано" : ""}</Typography>
                             </FormControl>
                         </Box>
+                        {error &&
+                            <Alert variant="outlined" severity="error">
+                                {error}
+                            </Alert>
+                        }
                     </CardContent>
                     <CardActions>
-                        <Button onClick={onSave} size="medium">Сохранить</Button>
-                        <Button onClick={() => onChangePage('main')} size="medium"
+                        <Button loading={loading} onClick={onSave} size="medium">Сохранить</Button>
+                        <Button onClick={() => navigate('/')} size="medium"
                                 color="neutral">Отменить</Button>
                     </CardActions>
                 </Card>
